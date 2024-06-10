@@ -1,0 +1,5 @@
+htmlcov
+py4jdbc/__pycache__
+tests/test-results.xml
+tests/__pycache__
+.cache

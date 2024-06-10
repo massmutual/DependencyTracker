@@ -1,0 +1,77 @@
+Py4jdbc
+===========
+
+Py4jdbc is a (mostly) `dbapi 2.0
+<https://www.python.org/dev/peps/pep-0249/>`_ compliant interface to
+JDBC.  It's similar to `JayDeBeAPI
+<https://github.com/baztian/jaydebeapi>`_, but uses a much more
+efficient JVM backend process implemented with Py4j instead of
+JPype. That means that you'll need a driver jar that interfaces
+between python and the jdbc drivers of your choice. See
+`building-the-jar`_.
+
+NOTE: To save the internet some annoyance, please note this project
+only works on unix-ish platforms and is currently only compatible with
+Python 3.5 and up.
+
+Install with pip
+++++++++++++++++
+
+    pip install py4jdbc
+
+Install from source tarball
++++++++++++++++++++++++++++
+
+    tar -zxf py4jdbc-V.X.Y.Z.tar.gz
+    cd py4jdbc-V.X.Y.Z
+    python setup.py install
+
+Example
+++++++++++++
+
+A simple example that starts a JVM subprocess::
+
+    from py4jdbc import connect
+
+    conn = connect("jdbc:postgresql://localhost/postgres, user="cow", password="moo")
+    cur = conn.cursor()
+    cur.execute("select 1 as cow;")
+
+
+.. _building-the-jar:
+
+Building the Py4jdbc assembly jar
++++++++++++++++++++++++++++++++++
+
+Py4jdbc starts a JVM process just before a query must be executed. The
+JVM process needs to be able to execute the code that interfaces
+between the jdbc driver and py4j. The source for this jar is available
+under the ``py4jdbc/scala`` directory. Sbt does the heavy lifting of
+compiling and building a jar from the source by executing ``sbt
+assembly``. The new assembly jar, saved under the
+``py4jdbc/scala/target/scala-2.10`` directory, contains all
+dependencies necessary to connect to postgres with py4jdbc. To add
+other jdbc drivers to the assembly jar, place the jdbc driver jars
+into the ``py4jdbc/scala/lib`` directory and rebuild with ``sbt
+assembly``.
+
+Here's an example::
+
+  # Get the py4jdbc code, build the container, and copy in a jdbc jar
+  git clone https://github.com/massmutual/py4jdbc.git
+  cd py4jdbc
+  cp my_vendors_jars/postgresql-9.4-1206-jdbc41.jar py4jdbc/scala/lib
+  sudo docker build . # save the image id from the output of this step
+  sudo docker run -v $PWD/:/ext/ -it $IMAGE_ID bash -il
+
+  # Go into the container and build the assembly jar
+  cd /ext/py4jdbc/scala/
+  sbt assembly
+  cp target/scala*/py4jdbc-assembly*.jar /ext/
+  logout
+
+  # Get out of the container and add the assembly jar to your classpath
+  export CLASSPATH=$PWD/py4jdbc-assembly*.jar:$CLASSPATH
+
+  # Party
+  python my_fancy_py4jdbc_script.py

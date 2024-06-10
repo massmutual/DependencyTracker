@@ -1,0 +1,4 @@
+#!/bin/bash -ex
+
+python setup.py test --addopts '-v --junitxml=tests/test-results.xml'
+rm -f derby.log
